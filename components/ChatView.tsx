@@ -1,9 +1,11 @@
-import React, { useRef, useEffect } from 'react';
+
+
+import React, { useRef, useEffect, useState } from 'react';
 import { Message } from '../types';
 import ChatInput from './ChatInput';
 import WelcomeMessage from './WelcomeMessage';
 import ChatMessage from './ChatMessage';
-import { Settings2, Loader2, RefreshCcw } from 'lucide-react';
+import { Settings2, RefreshCcw } from 'lucide-react';
 
 interface ChatViewProps {
     messages: Message[];
@@ -16,6 +18,19 @@ interface ChatViewProps {
     suggestions: string[];
 }
 
+const LoadingIndicator = () => {
+    const [dots, setDots] = useState('');
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setDots(prev => (prev.length >= 3 ? '' : prev + '.'));
+        }, 300);
+        return () => clearInterval(timer);
+    }, []);
+
+    return <p className="text-gray-600">Let me learn it{dots}</p>;
+};
+
 const ChatView: React.FC<ChatViewProps> = ({ messages, isLoading, error, onSubmit, sourceCount, onSaveToNote, onClearChat, suggestions }) => {
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -25,6 +40,8 @@ const ChatView: React.FC<ChatViewProps> = ({ messages, isLoading, error, onSubmi
         }
     }, [messages, isLoading]);
     
+    const showWelcomeArea = messages.length === 0 && !isLoading;
+
     return (
         <div className="flex-1 min-w-0 h-full bg-white md:rounded-lg md:border md:border-gray-200 flex flex-col overflow-hidden">
             <div className="hidden md:flex items-center justify-between px-4 h-[48px] border-b border-gray-200 flex-shrink-0">
@@ -43,7 +60,7 @@ const ChatView: React.FC<ChatViewProps> = ({ messages, isLoading, error, onSubmi
                 </div>
             </div>
             <div ref={chatContainerRef} className="flex-1 flex flex-col overflow-y-auto chat-scroll relative">
-                {messages.length === 0 && !isLoading ? (
+                {showWelcomeArea ? (
                     <div className="flex-1 flex items-center justify-center p-4">
                         <WelcomeMessage />
                     </div>
@@ -54,7 +71,7 @@ const ChatView: React.FC<ChatViewProps> = ({ messages, isLoading, error, onSubmi
                         ))}
                         {isLoading && (
                             <div className="flex justify-start">
-                                <Loader2 className="h-6 w-6 text-gray-600 animate-spin" />
+                                <LoadingIndicator />
                             </div>
                         )}
                     </div>

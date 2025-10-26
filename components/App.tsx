@@ -473,23 +473,17 @@ const App: React.FC = () => {
             setNotebooks(prev => [...prev, newNotebook]);
             setCurrentNotebook(newNotebook);
             setCurrentView('main');
-            setIsAddSourceModalOpen(true);
         }
     }, []);
 
     const handleGoToHomepage = useCallback(async () => {
-        // If the current notebook has no sources, delete it before going home.
-        if (currentNotebook && currentNotebook.sources === 0) {
-            await deleteNotebook(currentNotebook.id);
-        }
-
         // Refetch notebooks to update source counts, etc.
         const updatedNotebooks = await getAllNotebooks();
         setNotebooks(updatedNotebooks);
         setCurrentNotebook(null);
         setMessages([]); // Clear chat history
         setCurrentView('homepage');
-    }, [currentNotebook]);
+    }, []);
 
     // --- Sidebar Toggles ---
     const handleToggleLeftSidebar = useCallback(() => setIsLeftSidebarOpen(prev => !prev), []);

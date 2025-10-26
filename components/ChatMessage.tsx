@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Message, Source } from '../types';
 import { SourceIcon } from './SourceIcon';
 import { Bookmark, Copy, Check } from 'lucide-react';
@@ -13,13 +13,17 @@ interface CitationPopoverProps {
     source: Source;
     chunkContent: string;
     style: React.CSSProperties;
+    onMouseEnter: () => void;
+    onMouseLeave: () => void;
 }
 
-const CitationPopover: React.FC<CitationPopoverProps> = ({ source, chunkContent, style }) => (
+const CitationPopover: React.FC<CitationPopoverProps> = ({ source, chunkContent, style, onMouseEnter, onMouseLeave }) => (
     <div
         style={style}
-        className="absolute z-20 w-80 rounded-xl shadow-2xl border border-gray-200/50 bg-gray-50/95 backdrop-blur-sm transform -translate-x-1/2 -translate-y-full -mt-3"
+        className="absolute z-20 w-80 rounded-lg shadow-lg border border-gray-200 bg-white/90 backdrop-blur-md transform -translate-x-1/2 -translate-y-full -mt-3"
         role="tooltip"
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
     >
         <div className="p-4">
             <div className="flex items-center gap-3 mb-3">
@@ -31,7 +35,7 @@ const CitationPopover: React.FC<CitationPopoverProps> = ({ source, chunkContent,
             <p className="text-sm text-gray-700 line-clamp-4" title={chunkContent}>{chunkContent}</p>
         </div>
         {/* Arrow */}
-        <div className="absolute left-1/2 -translate-x-1/2 bottom-[-6px] w-3 h-3 bg-gray-50 border-r border-b border-gray-200/50 transform rotate-45"></div>
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-[-6px] w-3 h-3 bg-white/90 border-r border-b border-gray-200 transform rotate-45"></div>
     </div>
 );
 
@@ -46,6 +50,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onSaveToNote }) => {
     const [popoverState, setPopoverState] = useState<{ source: Source; chunkContent: string; style: React.CSSProperties } | null>(null);
     const [isCopied, setIsCopied] = useState(false);
     const contentRef = useRef<HTMLDivElement>(null);
+    const hideTimerRef = useRef<number | null>(null);
     
     const handleCopy = () => {
         if (isCopied) return;
@@ -72,6 +77,20 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onSaveToNote }) => {
         return marked.parse(processedText);
     }, [processedText, isUser]);
 
+    const cancelHidePopover = useCallback(() => {
+        if (hideTimerRef.current) {
+            clearTimeout(hideTimerRef.current);
+            hideTimerRef.current = null;
+        }
+    }, []);
+
+    const hidePopover = useCallback(() => {
+        cancelHidePopover(); // Prevent multiple timers from running
+        hideTimerRef.current = window.setTimeout(() => {
+            setPopoverState(null);
+        }, 200);
+    }, [cancelHidePopover]);
+
     useEffect(() => {
         const contentEl = contentRef.current;
         if (!contentEl || isUser) return;
@@ -79,6 +98,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onSaveToNote }) => {
         const handleMouseOver = (e: MouseEvent) => {
             const target = e.target as HTMLElement;
             if (target.classList.contains('citation-button')) {
+                cancelHidePopover();
                 const chunkIndex = parseInt(target.dataset.chunkIndex || '', 10);
                 if (message.chunks && !isNaN(chunkIndex) && message.chunks[chunkIndex]) {
                     const chunk = message.chunks[chunkIndex];
@@ -105,7 +125,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onSaveToNote }) => {
         const handleMouseOut = (e: MouseEvent) => {
              const target = e.target as HTMLElement;
             if (target.classList.contains('citation-button')) {
-                setPopoverState(null);
+                hidePopover();
             }
         };
 
@@ -115,8 +135,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onSaveToNote }) => {
         return () => {
             contentEl.removeEventListener('mouseover', handleMouseOver);
             contentEl.removeEventListener('mouseout', handleMouseOut);
+            cancelHidePopover();
         };
-    }, [rawMarkup, message.chunks, message.sources, isUser]);
+    }, [rawMarkup, message.chunks, message.sources, isUser, cancelHidePopover, hidePopover]);
 
     if (isUser) {
          return (
@@ -135,7 +156,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onSaveToNote }) => {
             <div className="w-full">
                 <div className="relative">
                     <div ref={contentRef} className="markdown-body" dangerouslySetInnerHTML={{ __html: rawMarkup }} />
-                    {popoverState && <CitationPopover source={popoverState.source} chunkContent={popoverState.chunkContent} style={popoverState.style} />}
+                    {popoverState && <CitationPopover 
+                        source={popoverState.source} 
+                        chunkContent={popoverState.chunkContent} 
+                        style={popoverState.style}
+                        onMouseEnter={cancelHidePopover}
+                        onMouseLeave={hidePopover}
+                    />}
                 </div>
 
                 {message.text && (

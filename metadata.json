@@ -1,0 +1,5 @@
+{
+  "name": "OmnibookLM-Staging",
+  "description": "A React-based web application that provides a notebook-like interface for interacting with various sources of information, powered by AI. It allows users to manage sources, chat with an AI assistant about the sources, and use studio tools for different content generation tasks.",
+  "requestFramePermissions": []
+}

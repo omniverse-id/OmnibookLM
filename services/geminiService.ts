@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Source, SourceStatus, Message, Chunk } from '../types';
+import { Source, SourceStatus, Message, Chunk, DiscoverResults } from '../types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -107,6 +107,62 @@ export const generateChatResponse = async (query: string, sources?: Source[]): P
     });
 
     return { text: response.text, chunks: textChunksForCitation };
+};
+
+export const discoverSources = async (topic: string): Promise<DiscoverResults> => {
+    try {
+        const prompt = `You are an expert research assistant. Your task is to find insightful and relevant sources (articles, web pages, videos) on a given topic.
+        
+        Topic: "${topic}"
+        
+        First, provide a concise one-paragraph summary of the key findings or themes identified across the sources you find. Use markdown for emphasis, like *this*.
+        
+        Then, provide a list of 5 to 7 of the most relevant sources. For each source, include its title, a direct link (URL), and a brief, one-sentence description of its content. Ensure the links are valid and directly accessible.`;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        summary: {
+                            type: Type.STRING,
+                            description: 'A one-paragraph summary of the findings, with markdown emphasis.'
+                        },
+                        sources: {
+                            type: Type.ARRAY,
+                            description: 'A list of 5-7 relevant sources.',
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    title: { type: Type.STRING },
+                                    link: { type: Type.STRING },
+                                    description: { type: Type.STRING }
+                                },
+                                required: ['title', 'link', 'description']
+                            }
+                        }
+                    },
+                    required: ['summary', 'sources']
+                }
+            }
+        });
+
+        const jsonStr = response.text.trim();
+        const result = JSON.parse(jsonStr);
+        
+        if (result.summary && Array.isArray(result.sources)) {
+            return result as DiscoverResults;
+        } else {
+            throw new Error("Invalid response format from AI.");
+        }
+
+    } catch (error) {
+        console.error("Error discovering sources:", error);
+        throw new Error("Failed to discover sources. The AI may be temporarily unavailable.");
+    }
 };
 
 

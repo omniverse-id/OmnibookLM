@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import Header from './components/Header';
 import LeftSidebar from './components/LeftSidebar';
@@ -8,7 +7,7 @@ import Footer from './components/Footer';
 import ConfirmationModal from './components/ConfirmationModal';
 import AddSourceModal from './components/AddSourceModal';
 import DiscoverSourcesModal from './components/DiscoverSourcesModal';
-import { Source, Message, SourceStatus, Notebook, SourceType, Chunk, Artifact } from './types';
+import { Source, Message, SourceStatus, Notebook, SourceType, Chunk, Artifact, DiscoveredSource } from './types';
 import { generateChatResponse, generateSuggestions } from './services/geminiService';
 import TabPanel from './components/TabPanel';
 import { iconMap, artifacts as initialArtifacts } from './constants';
@@ -478,18 +477,17 @@ const App: React.FC = () => {
     }, []);
 
     const handleGoToHomepage = useCallback(async () => {
-        // If the current notebook has no sources, delete it before going home.
-        if (currentNotebook && currentNotebook.sources === 0) {
+        // If the current notebook is empty (has no sources), delete it when navigating away.
+        if (currentNotebook && sources.length === 0) {
             await deleteNotebook(currentNotebook.id);
         }
-
-        // Refetch notebooks to update source counts, etc.
+        
         const updatedNotebooks = await getAllNotebooks();
         setNotebooks(updatedNotebooks);
         setCurrentNotebook(null);
         setMessages([]); // Clear chat history
         setCurrentView('homepage');
-    }, [currentNotebook]);
+    }, [currentNotebook, sources]);
 
     // --- Sidebar Toggles ---
     const handleToggleLeftSidebar = useCallback(() => setIsLeftSidebarOpen(prev => !prev), []);
@@ -679,6 +677,47 @@ const App: React.FC = () => {
         }
     }, [currentNotebook]);
 
+    const handleImportSources = useCallback(async (discoveredSources: DiscoveredSource[]) => {
+        if (!currentNotebook) return;
+    
+        const newSources: Source[] = discoveredSources.map(ds => {
+            let type: SourceType = 'website';
+            try {
+                const url = new URL(ds.link);
+                if (url.hostname.includes('youtube.com') || url.hostname.includes('youtu.be')) {
+                    type = 'youtube';
+                }
+            } catch (e) {
+                console.warn(`Invalid URL discovered: ${ds.link}`);
+            }
+    
+            return {
+                id: crypto.randomUUID(),
+                name: ds.title,
+                type: type,
+                status: SourceStatus.INDEXED, // Assume web sources are ready
+                checked: true,
+                notebookId: currentNotebook.id,
+                textContent: ds.link, // Store the link here
+            };
+        });
+    
+        if (newSources.length > 0) {
+            setSources(prev => [...prev, ...newSources]);
+            
+            for (const source of newSources) {
+                await addSource(source);
+            }
+    
+            const updatedNotebook = { ...currentNotebook, sources: currentNotebook.sources + newSources.length };
+            await db.notebooks.update(currentNotebook.id, { sources: updatedNotebook.sources });
+            setCurrentNotebook(updatedNotebook);
+            setNotebooks(prev => prev.map(n => n.id === currentNotebook.id ? updatedNotebook : n));
+        }
+    
+        setIsDiscoverModalOpen(false);
+    }, [currentNotebook]);
+
     const handleToggleSource = useCallback((id: string) => {
         setSources(prevSources => prevSources.map(source =>
             source.id === id ? { ...source, checked: !source.checked } : source
@@ -768,7 +807,6 @@ const App: React.FC = () => {
             .replace(/(\*\*|__)(.*?)\1/g, '$2')
             .replace(/(\*|_)(.*?)\1/g, '$2')
             .replace(/`{1,3}(.*?)`{1,3}/gs, '$1')
-            .replace(/^[#\s]*/gm, '')
             .replace(/^\s*[-*+]\s+/gm, '')
             .replace(/\s+/g, ' ')
             .trim();
@@ -864,7 +902,10 @@ const App: React.FC = () => {
 
     // --- Modals ---
     const handleAddSourceClick = useCallback(() => setIsAddSourceModalOpen(true), []);
-    const handleDiscoverSourceClick = useCallback(() => setIsDiscoverModalOpen(true), []);
+    const handleDiscoverSourceClick = useCallback(() => {
+        setIsAddSourceModalOpen(false);
+        setIsDiscoverModalOpen(true);
+    }, []);
 
     // --- Computed values ---
     const checkedSourcesCount = sources.filter(s => s.checked).length;
@@ -969,11 +1010,13 @@ const App: React.FC = () => {
                 onClose={() => setIsAddSourceModalOpen(false)}
                 onFileUpload={handleFileUpload}
                 onAddTextSource={handleAddTextSource}
+                onDiscoverSource={handleDiscoverSourceClick}
                 sourceCount={totalSourcesCount}
             />
             <DiscoverSourcesModal 
                 isOpen={isDiscoverModalOpen}
                 onClose={() => setIsDiscoverModalOpen(false)}
+                onImport={handleImportSources}
             />
         </div>
     );

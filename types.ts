@@ -59,3 +59,14 @@ export interface Notebook {
     date: string;
     sources: number;
 }
+
+export interface DiscoveredSource {
+  title: string;
+  link: string;
+  description: string;
+}
+
+export interface DiscoverResults {
+  summary: string;
+  sources: DiscoveredSource[];
+}

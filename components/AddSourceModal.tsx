@@ -22,10 +22,11 @@ interface AddSourceModalProps {
     onClose: () => void;
     onFileUpload: (files: FileList) => void;
     onAddTextSource: (content: string, type: 'website' | 'youtube' | 'text') => void;
+    onDiscoverSource: () => void;
     sourceCount: number;
 }
 
-const AddSourceModal: React.FC<AddSourceModalProps> = ({ isOpen, onClose, onFileUpload, onAddTextSource, sourceCount }) => {
+const AddSourceModal: React.FC<AddSourceModalProps> = ({ isOpen, onClose, onFileUpload, onAddTextSource, onDiscoverSource, sourceCount }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const MAX_SOURCES = 300;
     const [currentView, setCurrentView] = useState<'main' | 'youtube' | 'website' | 'text'>('main');
@@ -43,7 +44,7 @@ const AddSourceModal: React.FC<AddSourceModalProps> = ({ isOpen, onClose, onFile
             onFileUpload(files);
             handleCloseModal();
         }
-    }, [onFileUpload, onClose]);
+    }, [onFileUpload]);
     
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
@@ -80,7 +81,7 @@ const AddSourceModal: React.FC<AddSourceModalProps> = ({ isOpen, onClose, onFile
                     <h2 className="text-xl font-medium text-gray-800">Add sources</h2>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button className="hidden sm:flex items-center gap-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors">
+                    <button onClick={onDiscoverSource} className="hidden sm:flex items-center gap-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors">
                         <FileSearch className="h-4 w-4" />
                         Discover sources
                     </button>

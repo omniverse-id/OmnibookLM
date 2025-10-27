@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { X, UploadCloud, FileSearch, Database, Link as LinkIcon, Clipboard, Globe, Youtube as YoutubeIconLucide } from 'lucide-react';
+import { X, Upload, FileSearch, Database, Link as LinkIcon, Clipboard, Globe, Youtube as YoutubeIconLucide } from 'lucide-react';
 import AddSourceDetailView from './AddSourceDetailView';
 
 // A simple placeholder for the Google icon
@@ -105,7 +105,7 @@ const AddSourceModal: React.FC<AddSourceModalProps> = ({ isOpen, onClose, onFile
                 >
                     <div className="flex justify-center mb-4">
                         <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
-                            <UploadCloud className="w-6 h-6 text-gray-600" />
+                            <Upload className="w-6 h-6 text-gray-600" />
                         </div>
                     </div>
                     <h3 className="text-base font-medium text-gray-800">Upload sources</h3>

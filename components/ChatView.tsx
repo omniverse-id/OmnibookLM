@@ -13,9 +13,12 @@ interface ChatViewProps {
     error: string | null;
     onSubmit: (query: string) => void;
     sourceCount: number;
+    totalSourcesCount: number;
     onSaveToNote: (message: Message) => void;
     onClearChat: () => void;
+    onAddSource: () => void;
     suggestions: string[];
+    onOpenConfigureChat: () => void;
 }
 
 const LoadingIndicator = () => {
@@ -31,7 +34,7 @@ const LoadingIndicator = () => {
     return <p className="text-gray-600">Let me learn it{dots}</p>;
 };
 
-const ChatView: React.FC<ChatViewProps> = ({ messages, isLoading, error, onSubmit, sourceCount, onSaveToNote, onClearChat, suggestions }) => {
+const ChatView: React.FC<ChatViewProps> = ({ messages, isLoading, error, onSubmit, sourceCount, totalSourcesCount, onSaveToNote, onClearChat, onAddSource, suggestions, onOpenConfigureChat }) => {
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -54,7 +57,11 @@ const ChatView: React.FC<ChatViewProps> = ({ messages, isLoading, error, onSubmi
                     >
                         <RefreshCcw className="h-5 w-5" />
                     </button>
-                    <button title="Configure notebook" className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:bg-[#f8f8f7] transition-colors">
+                    <button 
+                        onClick={onOpenConfigureChat}
+                        title="Configure Chat" 
+                        className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:bg-[#f8f8f7] transition-colors"
+                    >
                         <Settings2 className="h-5 w-5" />
                     </button>
                 </div>
@@ -62,7 +69,7 @@ const ChatView: React.FC<ChatViewProps> = ({ messages, isLoading, error, onSubmi
             <div ref={chatContainerRef} className="flex-1 flex flex-col overflow-y-auto chat-scroll relative">
                 {showWelcomeArea ? (
                     <div className="flex-1 flex items-center justify-center p-4">
-                        <WelcomeMessage />
+                        <WelcomeMessage totalSourcesCount={totalSourcesCount} onAddSource={onAddSource} />
                     </div>
                 ) : (
                     <div className="max-w-5xl mx-auto px-3 py-6 space-y-6 w-full">
@@ -82,6 +89,7 @@ const ChatView: React.FC<ChatViewProps> = ({ messages, isLoading, error, onSubmi
                 error={error} 
                 onSubmit={onSubmit} 
                 sourceCount={sourceCount} 
+                totalSourcesCount={totalSourcesCount}
                 suggestions={suggestions}
             />
         </div>

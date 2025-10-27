@@ -70,3 +70,12 @@ export interface DiscoverResults {
   summary: string;
   sources: DiscoveredSource[];
 }
+
+export type ConversationalStyle = 'Default' | 'Learning Guide' | 'Custom';
+export type ResponseLength = 'Default' | 'Longer' | 'Shorter';
+
+export interface ChatConfig {
+    style: ConversationalStyle;
+    length: ResponseLength;
+    customPrompt?: string;
+}

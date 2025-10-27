@@ -1,21 +1,36 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Settings, Ratio, Settings2, UserCircle } from 'lucide-react';
+import { Settings, Ratio, Settings2, UserCircle, Globe, Sun, Moon, MonitorSmartphone, ChevronRight } from 'lucide-react';
 
 interface HeaderProps {
     activeTab: 'sources' | 'chat' | 'studio';
     onNavigateHome?: () => void;
     notebookTitle?: string;
     onUpdateTitle?: (newTitle: string) => void;
+    onOpenLanguageModal: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ activeTab, onNavigateHome, notebookTitle, onUpdateTitle }) => {
+const Header: React.FC<HeaderProps> = ({ activeTab, onNavigateHome, notebookTitle, onUpdateTitle, onOpenLanguageModal }) => {
     const [title, setTitle] = useState(notebookTitle || 'Untitled Notebook');
+    const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
+    const [isThemeSubMenuOpen, setIsThemeSubMenuOpen] = useState(false);
+    const settingsMenuRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         setTitle(notebookTitle || 'Untitled Notebook');
     }, [notebookTitle]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (settingsMenuRef.current && !settingsMenuRef.current.contains(event.target as Node)) {
+                setIsSettingsMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setTitle(e.target.value);
@@ -76,10 +91,52 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onNavigateHome, notebookTitl
                         <Settings2 className="h-5 w-5" />
                     </button>
                 )}
-                <button className="flex items-center justify-center gap-2 text-sm text-gray-700 hover:bg-[#f8f8f7] w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-1.5 rounded-lg transition-colors border border-gray-300">
-                    <Settings className="h-5 w-5" />
-                    <span className="hidden md:inline font-medium">Settings</span>
-                </button>
+                <div className="relative" ref={settingsMenuRef}>
+                    <button 
+                        onClick={() => setIsSettingsMenuOpen(prev => !prev)}
+                        className="flex items-center justify-center gap-2 text-sm text-gray-700 hover:bg-[#f8f8f7] w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-1.5 rounded-lg transition-colors border border-gray-300"
+                    >
+                        <Settings className="h-5 w-5" />
+                        <span className="hidden md:inline font-medium">Settings</span>
+                    </button>
+                     {isSettingsMenuOpen && (
+                        <div className="absolute top-full right-0 mt-2 w-[168px] bg-white shadow-lg rounded-lg border border-gray-200 py-2 z-50">
+                            <button onClick={() => { onOpenLanguageModal(); setIsSettingsMenuOpen(false); }} className="w-full flex items-center gap-4 px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                <Globe className="w-5 h-5 text-gray-500" />
+                                <span>Output Language</span>
+                            </button>
+                            <div
+                                className="relative"
+                                onMouseEnter={() => setIsThemeSubMenuOpen(true)}
+                                onMouseLeave={() => setIsThemeSubMenuOpen(false)}
+                            >
+                                <button className={`w-full flex items-center justify-between gap-4 px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 ${isThemeSubMenuOpen ? 'bg-gray-100' : ''}`}>
+                                    <div className="flex items-center gap-4">
+                                        <Sun className="w-5 h-5 text-gray-500" />
+                                        <span>Light mode</span>
+                                    </div>
+                                    <ChevronRight className="w-4 h-4 text-gray-500" />
+                                </button>
+                                {isThemeSubMenuOpen && (
+                                    <div className="absolute top-0 right-full mr-1 w-[168px] bg-white shadow-lg rounded-lg border border-gray-200 py-2">
+                                        <button className="w-full flex items-center gap-4 px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                            <Sun className="w-5 h-5 text-gray-500" />
+                                            <span>Light mode</span>
+                                        </button>
+                                        <button className="w-full flex items-center gap-4 px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                            <Moon className="w-5 h-5 text-gray-500" />
+                                            <span>Dark mode</span>
+                                        </button>
+                                        <button className="w-full flex items-center gap-4 px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                            <MonitorSmartphone className="w-5 h-5 text-gray-500" />
+                                            <span>Device</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
                 <button className="flex items-center justify-center text-gray-700 hover:bg-[#f8f8f7] w-10 h-10 rounded-full transition-colors" title="User account">
                     <UserCircle className="w-8 h-8" />
                 </button>

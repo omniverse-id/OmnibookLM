@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, AudioLines, Check, ChevronDown } from 'lucide-react';
+import { ResponseLength } from '../types';
 
 interface AudioOverviewModalProps {
     isOpen: boolean;
@@ -42,7 +43,7 @@ const focusSuggestions: Record<string, string[]> = {
 
 const AudioOverviewModal: React.FC<AudioOverviewModalProps> = ({ isOpen, onClose }) => {
     const [selectedFormat, setSelectedFormat] = useState('Deep Dive');
-    const [selectedLength, setSelectedLength] = useState('Default');
+    const [selectedLength, setSelectedLength] = useState<ResponseLength>('Default');
     const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
     const [selectedLang, setSelectedLang] = useState('Indonesia');
     const langDropdownRef = useRef<HTMLDivElement>(null);
@@ -64,6 +65,7 @@ const AudioOverviewModal: React.FC<AudioOverviewModalProps> = ({ isOpen, onClose
     if (!isOpen) return null;
 
     const currentSuggestions = focusSuggestions[selectedFormat] || [];
+    const lengthOptions: ResponseLength[] = ['Shorter', 'Default'];
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4" aria-modal="true" role="dialog" onClick={onClose}>
@@ -146,19 +148,20 @@ const AudioOverviewModal: React.FC<AudioOverviewModalProps> = ({ isOpen, onClose
                         <div>
                              <label className="block text-sm font-medium text-gray-700 mb-2">Length</label>
                             <div className="inline-flex items-center p-0.5 border border-gray-300 rounded-lg bg-gray-100">
-                                <button 
-                                    onClick={() => setSelectedLength('Shorter')} 
-                                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${selectedLength === 'Shorter' ? 'bg-gray-900 text-white' : 'bg-transparent text-gray-600 hover:bg-gray-200'}`}
-                                >
-                                    Shorter
-                                </button>
-                                <button 
-                                    onClick={() => setSelectedLength('Default')} 
-                                    className={`flex items-center gap-1 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${selectedLength === 'Default' ? 'bg-gray-900 text-white' : 'bg-transparent text-gray-600 hover:bg-gray-200'}`}
-                                >
-                                    {selectedLength === 'Default' && <Check className="w-4 h-4" />}
-                                    Default
-                                </button>
+                                {lengthOptions.map(opt => (
+                                     <button
+                                        key={opt}
+                                        onClick={() => setSelectedLength(opt)}
+                                        className={`flex items-center gap-1 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                                            selectedLength === opt
+                                            ? 'bg-gray-900 text-white'
+                                            : 'bg-transparent text-gray-600 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        {selectedLength === opt && <Check className="w-4 h-4" />}
+                                        {opt}
+                                    </button>
+                                ))}
                             </div>
                         </div>
                     </div>

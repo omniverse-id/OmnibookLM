@@ -7,7 +7,9 @@ import Footer from './components/Footer';
 import ConfirmationModal from './components/ConfirmationModal';
 import AddSourceModal from './components/AddSourceModal';
 import DiscoverSourcesModal from './components/DiscoverSourcesModal';
-import { Source, Message, SourceStatus, Notebook, SourceType, Chunk, Artifact, DiscoveredSource } from './types';
+import ConfigureChatModal from './components/ConfigureChatModal';
+import LanguageModal from './components/LanguageModal';
+import { Source, Message, SourceStatus, Notebook, SourceType, Chunk, Artifact, DiscoveredSource, ChatConfig } from './types';
 import { generateChatResponse, generateSuggestions } from './services/geminiService';
 import TabPanel from './components/TabPanel';
 import { iconMap, artifacts as initialArtifacts } from './constants';
@@ -433,7 +435,11 @@ const App: React.FC = () => {
     
     const [isAddSourceModalOpen, setIsAddSourceModalOpen] = useState(false);
     const [isDiscoverModalOpen, setIsDiscoverModalOpen] = useState(false);
+    const [isConfigureChatModalOpen, setIsConfigureChatModalOpen] = useState(false);
+    const [chatConfig, setChatConfig] = useState<ChatConfig>({ style: 'Default', length: 'Default', customPrompt: '' });
     const [activeTab, setActiveTab] = useState<'sources' | 'chat' | 'studio'>('studio');
+    const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
+    const [outputLanguage, setOutputLanguage] = useState('Indonesia');
 
     // --- Database and State Initialization ---
     useEffect(() => {
@@ -906,6 +912,19 @@ const App: React.FC = () => {
         setIsAddSourceModalOpen(false);
         setIsDiscoverModalOpen(true);
     }, []);
+    const handleOpenConfigureChat = useCallback(() => setIsConfigureChatModalOpen(true), []);
+    const handleSaveChatConfig = useCallback((newConfig: ChatConfig) => {
+        setChatConfig(newConfig);
+        // In a real app, you would likely save this to the DB for the current notebook
+        console.log("Chat config saved:", newConfig);
+    }, []);
+
+    const handleOpenLanguageModal = useCallback(() => setIsLanguageModalOpen(true), []);
+    const handleSaveLanguage = useCallback((language: string) => {
+        setOutputLanguage(language);
+        console.log("Language saved:", language);
+        // In a real app, this would likely be saved to user preferences or DB.
+    }, []);
 
     // --- Computed values ---
     const checkedSourcesCount = sources.filter(s => s.checked).length;
@@ -920,6 +939,7 @@ const App: React.FC = () => {
                 onNavigateHome={currentView === 'main' ? handleGoToHomepage : undefined}
                 notebookTitle={currentNotebook?.title}
                 onUpdateTitle={(newTitle) => currentNotebook && handleUpdateNotebookTitle(currentNotebook.id, newTitle)}
+                onOpenLanguageModal={handleOpenLanguageModal}
             />
             
             {currentView === 'homepage' ? (
@@ -959,9 +979,12 @@ const App: React.FC = () => {
                                 error={error}
                                 onSubmit={handleQuerySubmit}
                                 sourceCount={checkedSourcesCount}
+                                totalSourcesCount={totalSourcesCount}
                                 onSaveToNote={handleSaveToNote}
                                 onClearChat={handleClearChat}
+                                onAddSource={handleAddSourceClick}
                                 suggestions={suggestions}
+                                onOpenConfigureChat={handleOpenConfigureChat}
                             />
                         </div>
                         {/* Right Sidebar (Studio) */}
@@ -975,6 +998,7 @@ const App: React.FC = () => {
                                 onArtifactSelect={handleArtifactSelect}
                                 onBack={handleBackToStudio}
                                 onDelete={handleOpenArtifactDeleteConfirmation}
+                                disabled={totalSourcesCount === 0}
                             />
                         </div>
                     </main>
@@ -1017,6 +1041,18 @@ const App: React.FC = () => {
                 isOpen={isDiscoverModalOpen}
                 onClose={() => setIsDiscoverModalOpen(false)}
                 onImport={handleImportSources}
+            />
+            <ConfigureChatModal
+                isOpen={isConfigureChatModalOpen}
+                onClose={() => setIsConfigureChatModalOpen(false)}
+                onSave={handleSaveChatConfig}
+                initialConfig={chatConfig}
+            />
+            <LanguageModal
+                isOpen={isLanguageModalOpen}
+                onClose={() => setIsLanguageModalOpen(false)}
+                onSave={handleSaveLanguage}
+                initialLanguage={outputLanguage}
             />
         </div>
     );

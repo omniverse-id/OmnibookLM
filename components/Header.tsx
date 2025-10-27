@@ -59,7 +59,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onNavigateHome, notebookTitl
 
     return (
         <header className="flex items-center h-16 px-4 md:px-9 bg-white z-10 flex-shrink-0">
-            <div className="flex items-center gap-4 flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
                 <button 
                     onClick={onNavigateHome}
                     disabled={!onNavigateHome}
@@ -100,8 +100,8 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onNavigateHome, notebookTitl
                         <span className="hidden md:inline font-medium">Settings</span>
                     </button>
                      {isSettingsMenuOpen && (
-                        <div className="absolute top-full right-0 mt-2 w-[168px] bg-white shadow-lg rounded-lg border border-gray-200 py-2 z-50">
-                            <button onClick={() => { onOpenLanguageModal(); setIsSettingsMenuOpen(false); }} className="w-full flex items-center gap-4 px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                        <div className="absolute top-full right-0 mt-2 w-[175px] bg-white shadow-lg rounded-lg border border-gray-200 py-2 z-50">
+                            <button onClick={() => { onOpenLanguageModal(); setIsSettingsMenuOpen(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
                                 <Globe className="w-5 h-5 text-gray-500" />
                                 <span>Output Language</span>
                             </button>
@@ -110,24 +110,24 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onNavigateHome, notebookTitl
                                 onMouseEnter={() => setIsThemeSubMenuOpen(true)}
                                 onMouseLeave={() => setIsThemeSubMenuOpen(false)}
                             >
-                                <button className={`w-full flex items-center justify-between gap-4 px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 ${isThemeSubMenuOpen ? 'bg-gray-100' : ''}`}>
-                                    <div className="flex items-center gap-4">
+                                <button className={`w-full flex items-center justify-between gap-2 px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 ${isThemeSubMenuOpen ? 'bg-gray-100' : ''}`}>
+                                    <div className="flex items-center gap-2">
                                         <Sun className="w-5 h-5 text-gray-500" />
                                         <span>Light mode</span>
                                     </div>
                                     <ChevronRight className="w-4 h-4 text-gray-500" />
                                 </button>
                                 {isThemeSubMenuOpen && (
-                                    <div className="absolute top-0 right-full mr-1 w-[168px] bg-white shadow-lg rounded-lg border border-gray-200 py-2">
-                                        <button className="w-full flex items-center gap-4 px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                    <div className="absolute top-0 right-full mr-1 w-[175px] bg-white shadow-lg rounded-lg border border-gray-200 py-2">
+                                        <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
                                             <Sun className="w-5 h-5 text-gray-500" />
                                             <span>Light mode</span>
                                         </button>
-                                        <button className="w-full flex items-center gap-4 px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                        <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
                                             <Moon className="w-5 h-5 text-gray-500" />
                                             <span>Dark mode</span>
                                         </button>
-                                        <button className="w-full flex items-center gap-4 px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                        <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
                                             <MonitorSmartphone className="w-5 h-5 text-gray-500" />
                                             <span>Device</span>
                                         </button>

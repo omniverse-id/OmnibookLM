@@ -69,7 +69,11 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onNavigateHome, notebookTitl
                     <Ratio className="h-6 w-6 text-white" />
                 </button>
                 {onNavigateHome ? (
-                    <div className="flex-1 min-w-0">
+                    <div className="relative min-w-[15ch]">
+                        {/* This invisible div acts as a sizer for the input field */}
+                        <div className="invisible whitespace-pre text-[22px] font-normal py-1 pl-1 pr-4" aria-hidden="true">
+                            {title || ' '}
+                        </div>
                         <input 
                             ref={inputRef}
                             type="text" 
@@ -78,7 +82,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onNavigateHome, notebookTitl
                             onBlur={saveTitle}
                             onKeyDown={handleKeyDown}
                             disabled={!onUpdateTitle}
-                            className="text-[22px] font-normal text-gray-800 bg-transparent w-full max-w-full p-1 rounded-lg outline-none ring-1 ring-transparent focus:ring-gray-400 focus:bg-white disabled:bg-transparent disabled:ring-transparent disabled:cursor-default" 
+                            className="absolute inset-0 text-[22px] font-normal text-gray-800 bg-transparent w-full p-1 rounded-lg outline-none ring-1 ring-transparent focus:ring-gray-400 focus:bg-white disabled:bg-transparent disabled:ring-transparent disabled:cursor-default" 
                         />
                     </div>
                 ) : (

@@ -10,7 +10,9 @@ import DiscoverSourcesModal from './components/DiscoverSourcesModal';
 import ConfigureChatModal from './components/ConfigureChatModal';
 import LanguageModal from './components/LanguageModal';
 import { Source, Message, SourceStatus, Notebook, SourceType, Chunk, Artifact, DiscoveredSource, ChatConfig } from './types';
-import { generateChatResponse, generateSuggestions } from './services/geminiService';
+import { generateChatResponse, generateSuggestions } from './services/openRouterService';
+import { processDocumentToChunks } from './services/embeddingService';
+import { vectorStore } from './services/vectorStore';
 import TabPanel from './components/TabPanel';
 import { iconMap, artifacts as initialArtifacts } from './constants';
 import { Plus, LayoutGrid, List, ChevronDown, MoreVertical, Pencil, Trash2, StickyNote } from 'lucide-react';
@@ -602,14 +604,36 @@ const App: React.FC = () => {
         setCurrentNotebook(updatedNotebook);
         setNotebooks(prev => prev.map(n => n.id === currentNotebook.id ? updatedNotebook : n));
 
+        // Process sources with embeddings for RAG
         newSources.forEach(source => {
             if (source.status === SourceStatus.INDEXING) {
-                setTimeout(async () => {
-                    await updateSourceStatus(source.id, SourceStatus.INDEXED);
-                    setSources(prev => prev.map(s => 
-                        s.id === source.id ? { ...s, status: SourceStatus.INDEXED } : s
-                    ));
-                }, 2000); // Simulate indexing
+                // Generate embeddings asynchronously
+                (async () => {
+                    try {
+                        // Only process text-based sources
+                        if ((source.type === 'text' || source.type === 'pdf') && source.textContent) {
+                            console.log(`Processing embeddings for: ${source.name}`);
+                            const chunks = await processDocumentToChunks(
+                                source.id,
+                                source.name,
+                                source.textContent
+                            );
+                            await vectorStore.addChunks(chunks);
+                            console.log(`Added ${chunks.length} chunks to vector store for ${source.name}`);
+                        }
+                        
+                        await updateSourceStatus(source.id, SourceStatus.INDEXED);
+                        setSources(prev => prev.map(s => 
+                            s.id === source.id ? { ...s, status: SourceStatus.INDEXED } : s
+                        ));
+                    } catch (error) {
+                        console.error(`Failed to process source ${source.name}:`, error);
+                        await updateSourceStatus(source.id, SourceStatus.FAILED);
+                        setSources(prev => prev.map(s => 
+                            s.id === source.id ? { ...s, status: SourceStatus.FAILED } : s
+                        ));
+                    }
+                })();
             }
         });
     }, [currentNotebook]);
@@ -674,12 +698,32 @@ const App: React.FC = () => {
             setCurrentNotebook(updatedNotebook);
             setNotebooks(prev => prev.map(n => n.id === currentNotebook.id ? updatedNotebook : n));
     
-            setTimeout(async () => {
-                await updateSourceStatus(newSource.id, SourceStatus.INDEXED);
-                setSources(prev => prev.map(s => 
-                    s.id === newSource.id ? { ...s, status: SourceStatus.INDEXED } : s
-                ));
-            }, 2000);
+            // Process text source with embeddings
+            (async () => {
+                try {
+                    if (newSource.textContent) {
+                        console.log(`Processing embeddings for: ${newSource.name}`);
+                        const chunks = await processDocumentToChunks(
+                            newSource.id,
+                            newSource.name,
+                            newSource.textContent
+                        );
+                        await vectorStore.addChunks(chunks);
+                        console.log(`Added ${chunks.length} chunks to vector store for ${newSource.name}`);
+                    }
+                    
+                    await updateSourceStatus(newSource.id, SourceStatus.INDEXED);
+                    setSources(prev => prev.map(s => 
+                        s.id === newSource.id ? { ...s, status: SourceStatus.INDEXED } : s
+                    ));
+                } catch (error) {
+                    console.error(`Failed to process source ${newSource.name}:`, error);
+                    await updateSourceStatus(newSource.id, SourceStatus.FAILED);
+                    setSources(prev => prev.map(s => 
+                        s.id === newSource.id ? { ...s, status: SourceStatus.FAILED } : s
+                    ));
+                }
+            })();
         }
     }, [currentNotebook]);
 
@@ -740,6 +784,11 @@ const App: React.FC = () => {
     const handleDeleteSource = async () => {
         if (sourceToDelete && currentNotebook) {
             await deleteSource(sourceToDelete.id);
+            
+            // Remove from vector store
+            await vectorStore.removeChunksBySourceId(sourceToDelete.id);
+            console.log(`Removed vector embeddings for: ${sourceToDelete.name}`);
+            
             setSources(prevSources => prevSources.filter(s => s.id !== sourceToDelete.id));
             
             // Update notebook source count
@@ -883,13 +932,25 @@ const App: React.FC = () => {
         const checkedSources = sources.filter(s => s.checked && s.status === SourceStatus.INDEXED);
         
         try {
-            const { text: botResponseText, chunks: responseChunks } = await generateChatResponse(query, checkedSources);
+            // Use RAG-based generation with vector search
+            const { text: botResponseText, retrievedChunks } = await generateChatResponse(
+                query, 
+                checkedSources,
+                messages // Pass conversation history for context
+            );
+            
+            console.log(`RAG retrieved ${retrievedChunks?.length || 0} relevant chunks`);
+            
             const botMessage: Message = { 
                 id: (Date.now() + 1).toString(), 
                 sender: 'bot', 
                 text: botResponseText,
-                sources: checkedSources, // Keep original sources for reference
-                chunks: responseChunks, // Pass the chunks to the message
+                sources: checkedSources,
+                // Convert retrieved chunks to the Message chunk format if needed
+                chunks: retrievedChunks?.map((result, idx) => ({
+                    sourceIndex: idx,
+                    content: result.chunk.content
+                })),
             };
             setMessages(prev => [...prev, botMessage]);
         } catch (err) {

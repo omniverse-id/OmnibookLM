@@ -2,6 +2,7 @@
 
 import Dexie, { type Table } from 'dexie';
 import { Notebook, Source, SourceStatus } from '../types';
+import type { DocumentChunk } from './embeddingService';
 
 // Omit non-serializable properties for DB storage
 export interface SourceDB extends Omit<Source, 'content'> {
@@ -14,11 +15,19 @@ export interface SourceDB extends Omit<Source, 'content'> {
 export const db = new Dexie('NotebookLMDB') as Dexie & {
     notebooks: Table<Notebook, number>;
     sources: Table<SourceDB, string>;
+    vectorChunks: Table<DocumentChunk, string>;
 };
 
 db.version(1).stores({
     notebooks: '++id, title',
     sources: 'id, notebookId'
+});
+
+// Add vectorChunks table in version 2
+db.version(2).stores({
+    notebooks: '++id, title',
+    sources: 'id, notebookId',
+    vectorChunks: 'id, sourceId'
 });
 
 
